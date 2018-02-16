@@ -1,7 +1,7 @@
 <?php
-
 namespace Mpociot\Firebase;
 
+use UnexpectedValueException;
 use Firebase\FirebaseInterface;
 use Firebase\FirebaseLib;
 

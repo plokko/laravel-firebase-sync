@@ -6,8 +6,9 @@ use Firebase\FirebaseInterface;
 use Firebase\FirebaseLib;
 
 /**
- * Class SyncsWithFirebase
+ * SyncsWithFirebase Trait
  * @package App\Traits
+ * @property  $firebaseSyncRelated array Relations to sync with Firebase (Note: related models must use SyncWithFirebase trait)
  */
 trait SyncsWithFirebase
 {
@@ -24,16 +25,20 @@ trait SyncsWithFirebase
     {
         static::created(function ($model) {
             $model->saveToFirebase('set');
+            $this->syncRelatedWithFirebase();
         });
         static::updated(function ($model) {
             $model->saveToFirebase('update');
+            $this->syncRelatedWithFirebase();
         });
         static::deleted(function ($model) {
             $model->saveToFirebase('delete');
+            $this->syncRelatedWithFirebase();
         });
         if(in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses(self::class))){
             static::restored(function ($model) {
                 $model->saveToFirebase('set');
+                $this->syncRelatedWithFirebase();
             });
         }
     }
@@ -56,7 +61,32 @@ trait SyncsWithFirebase
         }
         return [];
     }
-
+    
+    /**
+     * Sync related models with Firebase (see $firebaseSyncRelated property)
+     */
+    function syncRelatedWithFirebase(){
+        if(!empty($this->firebaseSyncRelated)){
+            foreach($this->firebaseSyncRelated AS $k=>$v){
+                $data = $related = null;
+                if(is_string($v)){
+                    $data = $this->{$v};
+                    $related = $this->{$v}()->getRelated();
+                }elseif(is_callable($v)){
+                    $query = $v($this->{$k}());
+                    if(!$query)
+                        continue;
+                    $data = $query->get();
+                    $related = $this->{$k}()->getRelated();
+                }
+                if(!$data instanceof SyncsWithFirebaseCollection && in_array(SyncsWithFirebase::class,class_uses(self::class))){
+                    throw new UnexpectedValueException('Unable to sync relation with firebase: related model '.get_class($related).' does not use SyncsWithFirebase trait');
+                }
+                $data->syncWithFirebase();
+            }
+        }
+    }
+    
     /**
      * Manually sync to firebase
      */

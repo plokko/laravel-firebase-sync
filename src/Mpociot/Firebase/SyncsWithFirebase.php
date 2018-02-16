@@ -1,4 +1,5 @@
 <?php
+
 namespace Mpociot\Firebase;
 
 use UnexpectedValueException;
@@ -25,20 +26,16 @@ trait SyncsWithFirebase
     {
         static::created(function ($model) {
             $model->saveToFirebase('set');
-            $this->syncRelatedWithFirebase();
         });
         static::updated(function ($model) {
             $model->saveToFirebase('update');
-            $this->syncRelatedWithFirebase();
         });
         static::deleted(function ($model) {
             $model->saveToFirebase('delete');
-            $this->syncRelatedWithFirebase();
         });
         if(in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses(self::class))){
             static::restored(function ($model) {
                 $model->saveToFirebase('set');
-                $this->syncRelatedWithFirebase();
             });
         }
     }
@@ -122,5 +119,6 @@ trait SyncsWithFirebase
         } elseif ($mode === 'delete') {
             $this->firebaseClient->delete($path);
         }
+        $this->syncRelatedWithFirebase();
     }
 }

@@ -1,5 +1,4 @@
 <?php
-
 namespace Mpociot\Firebase;
 
 use UnexpectedValueException;
